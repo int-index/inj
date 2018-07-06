@@ -31,7 +31,6 @@ class Inj p a where
 --
 -- @
 -- data Shape x = Circle | Rectangle | Other x
---   deriving Functor
 -- @
 --
 -- If we want to write @inj Circle@, then we get an ambiguity error:
@@ -47,14 +46,7 @@ class Inj p a where
 --
 -- but for good type inference we want
 --
--- @instance (x1 ~ x2) => Inj (Shape x1) (Shape x2)@
+-- @instance (p ~ Shape x) => Inj p (Shape x)@
 --
--- Furthermore, we can take advantage of @Shape@ being a functor and
--- define an even better instance:
---
--- @
--- instance Inj a b => Inj (Shape a) (Shape b) where
---   inj = fmap inj
--- @
---
--- Unfortunately, both of the better instances are overlapping with @Inj a a@.
+-- Unfortunately, this instance can't be used in the presence of @Inj a a@
+-- due to overlap.
