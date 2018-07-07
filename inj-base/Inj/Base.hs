@@ -111,8 +111,8 @@ instance Integral p => Inj p WordPtr where
 -- 'realToFrac' is an injection from any @Real p@ to any @Fractional a@.
 --------------------------------------------------------------------------------
 
-instance (Inj Integer a, Real p) => Inj p (Ratio a) where
-  inj p = inj n :% inj d
+instance (Inject Integer a, Real p) => Inj p (Ratio a) where
+  inj p = inject n :% inject d
     where
       n :% d = toRational p
 
@@ -133,72 +133,72 @@ instance Real p => Inj p Float where
 instance Real p => Inj p Double where
   inj = realToFrac
 
-instance (Num a, Inj p a) => Inj p (Complex a) where
-  inj p = inj p :+ 0
+instance (Num a, Inject p a) => Inj p (Complex a) where
+  inj p = inject p :+ 0
 
 --------------------------------------------------------------------------------
 -- 'pure' is often an injection into @Applicative f@.
 --------------------------------------------------------------------------------
 
-instance Inj p a => Inj p [a] where
-  inj = pure . inj
+instance Inject p a => Inj p [a] where
+  inj = pure . inject
 
-instance Inj p a => Inj p (Maybe a) where
-  inj = pure . inj
+instance Inject p a => Inj p (Maybe a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (IO a) where
-  inj = pure . inj
+instance Inject p a => Inj p (IO a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (NonEmpty a) where
-  inj = pure . inj
+instance Inject p a => Inj p (NonEmpty a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (ReadP a) where
-  inj = pure . inj
+instance Inject p a => Inj p (ReadP a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (ReadPrec a) where
-  inj = pure . inj
+instance Inject p a => Inj p (ReadPrec a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (Down a) where
-  inj = pure . inj
+instance Inject p a => Inj p (Down a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (Product a) where
-  inj = pure . inj
+instance Inject p a => Inj p (Product a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (Sum a) where
-  inj = pure . inj
+instance Inject p a => Inj p (Sum a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (Dual a) where
-  inj = pure . inj
+instance Inject p a => Inj p (Dual a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (Data.Monoid.Last a) where
-  inj = pure . inj
+instance Inject p a => Inj p (Data.Monoid.Last a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (Data.Monoid.First a) where
-  inj = pure . inj
+instance Inject p a => Inj p (Data.Monoid.First a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (STM a) where
-  inj = pure . inj
+instance Inject p a => Inj p (STM a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (Identity a) where
-  inj = pure . inj
+instance Inject p a => Inj p (Identity a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (ZipList a) where
-  inj = pure . inj
+instance Inject p a => Inj p (ZipList a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (Option a) where
-  inj = pure . inj
+instance Inject p a => Inj p (Option a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (Data.Semigroup.Last a) where
-  inj = pure . inj
+instance Inject p a => Inj p (Data.Semigroup.Last a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (Data.Semigroup.First a) where
-  inj = pure . inj
+instance Inject p a => Inj p (Data.Semigroup.First a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (Max a) where
-  inj = pure . inj
+instance Inject p a => Inj p (Max a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (Min a) where
-  inj = pure . inj
+instance Inject p a => Inj p (Min a) where
+  inj = pure . inject
 
 instance
     TypeError
@@ -222,30 +222,30 @@ instance
   where
     inj = error "impossible"
 
-instance Inj p a => Inj p (ST s a) where
-  inj = pure . inj
+instance Inject p a => Inj p (ST s a) where
+  inj = pure . inject
 
-instance Inj p a => Inj p (r -> a) where
-  inj = pure . inj
+instance Inject p a => Inj p (r -> a) where
+  inj = pure . inject
 
-instance Inj p (f (g a)) => Inj p (Compose f g a) where
-  inj = Compose . inj
+instance Inject p (f (g a)) => Inj p (Compose f g a) where
+  inj = Compose . inject
 
 --------------------------------------------------------------------------------
 -- Generic
 --------------------------------------------------------------------------------
 
-instance Inj p (f a) => Inj p (Rec1 f a) where
-  inj = Rec1 . inj
+instance Inject p (f a) => Inj p (Rec1 f a) where
+  inj = Rec1 . inject
 
-instance Inj p (f a) => Inj p (M1 i c f a) where
-  inj = M1 . inj
+instance Inject p (f a) => Inj p (M1 i c f a) where
+  inj = M1 . inject
 
-instance Inj p a => Inj p (Par1 a) where
-  inj = Par1 . inj
+instance Inject p a => Inj p (Par1 a) where
+  inj = Par1 . inject
 
-instance Inj p a => Inj p (K1 i a x) where
-  inj = K1 . inj
+instance Inject p a => Inj p (K1 i a x) where
+  inj = K1 . inject
 
-instance Inj p (f (g a)) => Inj p ((:.:) f g a) where
-  inj = Comp1 . inj
+instance Inject p (f (g a)) => Inj p ((:.:) f g a) where
+  inj = Comp1 . inject

@@ -10,10 +10,46 @@ Injections can be used to construct nested structures from singleton elements.
 
 {-# LANGUAGE NoImplicitPrelude,
              DefaultSignatures,
-             MultiParamTypeClasses,
-             TypeFamilies #-}
+             FunctionalDependencies,
+             TypeFamilies, ScopedTypeVariables, UndecidableSuperClasses,
+             DataKinds, PolyKinds, GADTs, FlexibleInstances, FlexibleContexts,
+             AllowAmbiguousTypes, TypeApplications, UndecidableInstances #-}
 
-module Inj (Inj(..)) where
+{-# OPTIONS -fno-warn-unticked-promoted-constructors #-}
+
+module Inj (Inj(inj), Inject(inject)) where
+
+data IsSame = Same | Different
+
+type family Cmp a b :: IsSame where
+  Cmp a a = Same
+  Cmp a b = Different
+
+data SIsSame (s :: IsSame) where
+  SSame :: SIsSame Same
+  SDifferent :: SIsSame Different
+
+class KIsSame s where
+  scmp :: SIsSame s
+
+instance KIsSame Same where
+  scmp = SSame
+
+instance KIsSame Different where
+  scmp = SDifferent
+
+type family InjDiff r where
+  InjDiff Same = (~)
+  InjDiff Different = Inj
+
+class Inject a b where
+  inject :: a -> b
+
+instance (KIsSame (Cmp a b), InjDiff (Cmp a b) a b) => Inject a b where
+  inject =
+    case scmp @(Cmp a b) of
+      SSame -> \x -> x
+      SDifferent -> inj
 
 -- | Inject @p@ into @a@.
 --
@@ -21,32 +57,4 @@ module Inj (Inj(..)) where
 -- @a@. This guarantees that the users will not encounter overlapping instances.
 class Inj p a where
   -- | Inject @p@ into @a@.
-  inj :: p -> a
-
-  default inj :: (p ~ a) => p -> a
-  inj = \x -> x
-
--- @instance Inj a a@ is tempting to define. Unfortunately, it does not work
--- as well as one might hope. For instance, consider a type like this:
---
--- @
--- data Shape x = Circle | Rectangle | Other x
--- @
---
--- If we want to write @inj Circle@, then we get an ambiguity error:
---
--- @
---    * Could not deduce (Inj (Shape x0) (Shape x))
---        arising from a use of `inj'
--- @
---
--- That is because @Inj a a@ for @Shape x@ is equivalent to
---
--- @instance Inj (Shape x) (Shape x)@
---
--- but for good type inference we want
---
--- @instance (p ~ Shape x) => Inj p (Shape x)@
---
--- Unfortunately, this instance can't be used in the presence of @Inj a a@
--- due to overlap.
+  inj :: Cmp p a ~ Different => p -> a
