@@ -29,10 +29,10 @@ import Data.Ord
 import Data.Proxy
 import Data.Semigroup
 import Data.Word
+import Data.Ratio
 import Foreign.Ptr
 import GHC.Conc
 import GHC.Generics
-import GHC.Real
 import Numeric.Natural
 import Text.ParserCombinators.ReadP
 import Text.ParserCombinators.ReadPrec
@@ -230,10 +230,8 @@ instance Integral p => Inj p WordPtr where
 -- 'realToFrac' is an injection from any @Real p@ to any @Fractional a@.
 --------------------------------------------------------------------------------
 
-instance (Inj Integer a, Real p) => Inj p (Ratio a) where
-  inj p = inj n :% inj d
-    where
-      n :% d = toRational p
+instance (Integral a, Real p) => Inj p (Ratio a) where
+  inj = realToFrac
 
 -- | Throws 'LossOfPrecision'.
 instance (HasResolution res, Real p) => Inj p (Fixed res) where
