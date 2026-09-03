@@ -1,18 +1,24 @@
--- | 'Inj' instances for types from 'base'.
+{- |
 
-{-# LANGUAGE
-    DefaultSignatures,
-    FunctionalDependencies,
-    FlexibleInstances,
-    FlexibleContexts,
-    TypeFamilies,
-    ScopedTypeVariables,
-    DataKinds,
-    TypeOperators,
-    UndecidableInstances
+An injection is a function that never maps distinct elements of the domain to
+the same element of the codomain. For example, @(\\x -> x + 1)@ is an injection,
+but @(\\x -> min x 0)@ is not.
+
+Injections can be used to construct nested structures from singleton elements.
+
+-}
+
+{-# LANGUAGE DefaultSignatures,
+             FlexibleContexts,
+             FlexibleInstances,
+             MultiParamTypeClasses,
+             ScopedTypeVariables,
+             TypeFamilies,
+             TypeOperators,
+             UndecidableInstances
 #-}
 
-module Inj.Base () where
+module Control.Inj (Inj(..)) where
 
 import Control.Applicative
 import Control.Exception hiding (TypeError)
@@ -27,9 +33,9 @@ import Data.List.NonEmpty
 import Data.Monoid
 import Data.Ord
 import Data.Proxy
+import Data.Ratio
 import Data.Semigroup
 import Data.Word
-import Data.Ratio
 import Foreign.Ptr
 import GHC.Conc
 import GHC.Generics
@@ -37,7 +43,41 @@ import Numeric.Natural
 import Text.ParserCombinators.ReadP
 import Text.ParserCombinators.ReadPrec
 
-import Inj
+-- | Inject @p@ into @a@.
+--
+-- By convention, the instances of @Inj@ never match on @p@ and always match on
+-- @a@. This guarantees that the users will not encounter overlapping instances.
+class Inj p a where
+  -- | Inject @p@ into @a@.
+  inj :: p -> a
+
+  default inj :: (p ~ a) => p -> a
+  inj = \x -> x
+
+-- @instance Inj a a@ is tempting to define. Unfortunately, it does not work
+-- as well as one might hope. For instance, consider a type like this:
+--
+-- @
+-- data Shape x = Circle | Rectangle | Other x
+-- @
+--
+-- If we want to write @inj Circle@, then we get an ambiguity error:
+--
+-- @
+--    * Could not deduce (Inj (Shape x0) (Shape x))
+--        arising from a use of `inj'
+-- @
+--
+-- That is because @Inj a a@ for @Shape x@ is equivalent to
+--
+-- @instance Inj (Shape x) (Shape x)@
+--
+-- but for good type inference we want
+--
+-- @instance (p ~ Shape x) => Inj p (Shape x)@
+--
+-- Unfortunately, this instance can't be used in the presence of @Inj a a@
+-- due to overlap.
 
 --------------------------------------------------------------------------------
 -- Identity injections
@@ -45,6 +85,7 @@ import Inj
 
 instance p ~ () => Inj p ()
 instance p ~ Bool => Inj p Bool
+instance p ~ Char => Inj p Char
 instance p ~ Ordering => Inj p Ordering
 
 instance p ~ Proxy t' => Inj p (Proxy t) where
@@ -127,16 +168,6 @@ class d ~ DecideZipList p => InjZipList d p a where
 
 instance InjZipList (DecideZipList p) p a => Inj p (ZipList a) where
   inj = injZipList
-
-type family DecideOption p where
-  DecideOption (Option p) = Decision_Map
-  DecideOption p = Decision_Wrap
-
-class d ~ DecideOption p => InjOption d p a where
-  injOption :: p -> Option a
-
-instance InjOption (DecideOption p) p a => Inj p (Option a) where
-  inj = injOption
 
 type family DecideST p where
   DecideST (ST s p) = Decision_Map
@@ -323,12 +354,6 @@ instance
   where
     injZipList = pure . inj
 
-instance
-    (DecideOption p ~ Decision_Wrap, Inj p a) =>
-    InjOption Decision_Wrap p a
-  where
-    injOption = pure . inj
-
 instance Inj p a => Inj p (Data.Semigroup.Last a) where
   inj = pure . inj
 
@@ -401,12 +426,6 @@ instance
     InjZipList Decision_Map p a
   where
     injZipList = fmap inj
-
-instance
-    (DecideOption p ~ Decision_Map, p ~ Option p', Inj p' a) =>
-    InjOption Decision_Map p a
-  where
-    injOption = fmap inj
 
 instance
     (DecideST p ~ Decision_Map, p ~ ST s p', Inj p' a) =>
